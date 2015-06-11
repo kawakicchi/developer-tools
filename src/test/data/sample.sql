@@ -1,5 +1,5 @@
 SET serveroutput ON;
--- ${name}
+-- ${ì¬Ò}
 DECLARE
   CURSOR c1 IS
   select * from sak.ó’m
