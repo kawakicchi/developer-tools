@@ -8,11 +8,19 @@
 	<packaging>jar</packaging>
 
 	<name>developer-tools</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/kawakicchi/developer-tools</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
+	<distributionManagement>
+		<repository>
+			<id>com.github.kawakicchi</id>
+			<name>Temporary Repository</name>
+			<url>file://${project.build.directory}</url>
+		</repository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
@@ -27,4 +35,42 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<finalName>Templator-${version}</finalName>
+					<descriptors>
+						<descriptor>/src/main/assembly/exe.xml</descriptor>
+					</descriptors>
+					<archive>
+						<manifest>
+							<mainClass>com.github.kawakicchi.developer.tools.DeveloperTools</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-sample-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>
