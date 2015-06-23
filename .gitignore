@@ -1,5 +1,7 @@
 *.class
 
+/tmp
+
 # Eclipse 
 /.settings
 .project

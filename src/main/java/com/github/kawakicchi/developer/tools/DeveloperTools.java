@@ -19,11 +19,15 @@ package com.github.kawakicchi.developer.tools;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,20 +52,143 @@ public class DeveloperTools {
 	public static void main(final String[] args) {
 
 		DeveloperTools tools = new DeveloperTools();
-		tools.execute();
+		tools.execute(new File("基幹IF一覧.xlsx"));
 
 	}
+
+	private static final String SHEET_NAME_TEMPLATE = "テンプレートファイル";
+	private static final String CHECK_FLAG_TRUE = "■";
 
 	public DeveloperTools() {
-
+		paramListMap = new HashMap<String, List<Map<String, Object>>>();
 	}
 
-	public void execute() {
-		String shellTemplate = read(new File("./src/test/data/sample.sh"), Charset.forName("UTF-8"));
-		String sqlTemplate = read(new File("./src/test/data/sample.sql"), Charset.forName("Windows-31J"));
+	private Workbook workbook;
+	private Map<String, List<Map<String, Object>>> paramListMap;
+
+	public void execute(final File file) {
+
+		try {
+			workbook = WorkbookFactory.create(file);
+
+			Sheet templateSheet = workbook.getSheet(SHEET_NAME_TEMPLATE);
+
+			for (int rowNum = 1; rowNum <= templateSheet.getLastRowNum(); rowNum++) {
+				Row row = templateSheet.getRow(rowNum);
+
+				String check = getStringValue(row.getCell(0));
+				if (null != check && CHECK_FLAG_TRUE.equals(check)) {
+					String filePath = getStringValue(row.getCell(1));
+					String charset = getStringValue(row.getCell(2));
+					String sheetName = getStringValue(row.getCell(3));
+					String outputDir = getStringValue(row.getCell(4));
+					if (null == filePath || null == charset || null == sheetName || null == outputDir) {
+						continue;
+					}
+
+					File srcFile = new File(filePath);
+					Charset cs = Charset.forName(charset);
+
+					String templateSource = readFile(srcFile, cs);
+					//System.out.println(templateSource);
+
+					List<Map<String, Object>> params = getParameter(sheetName);
+
+					for (Map<String, Object> param : params) {
+						String check2 = param.get("出力").toString();
+						if (null != check2 && CHECK_FLAG_TRUE.equals(check2)) {
+
+							File destDir = new File(outputDir);
+							destDir.mkdirs();
+							File destFile = Paths.get(outputDir, decorate(srcFile.getName(), param)).toFile();
+							
+							output(templateSource, param, destFile, cs);
+						}
+					}
+				}
+			}
+		} catch (InvalidFormatException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 
-	private String read(final File file, final Charset charset) {
+	private String decorate(final String src, final Map<String, Object> params) {
+		String buf = src;
+		for (String key : params.keySet()) {
+			buf = buf.replaceAll(String.format("\\$\\{%s\\}", key), params.get(key).toString());
+		}
+		return buf;
+	}
+
+	private void output(final String source, final Map<String, Object> param, final File destFile, final Charset charset) {
+		String buffer = decorate(source, param);
+		
+		OutputStreamWriter writer = null;
+		try {
+			writer = new OutputStreamWriter(new FileOutputStream(destFile), charset);
+			
+			writer.write(buffer);
+			
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		} finally {
+			try {
+				if (null != writer) {
+					writer.close();
+				}
+			}catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private List<Map<String, Object>> getParameter(final String name) {
+		List<Map<String, Object>> parameter = null;
+		if (paramListMap.containsKey(name)) {
+			parameter = paramListMap.get(name);
+		} else {
+			parameter = readParameter(name);
+			paramListMap.put(name, parameter);
+		}
+		return parameter;
+	}
+
+	private List<Map<String, Object>> readParameter(final String name) {
+		List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+
+		Sheet sheet = workbook.getSheet(name);
+		if (null != sheet) {
+			Row row = sheet.getRow(0);
+			List<String> colNames = new ArrayList<String>();
+			for (int colNum = 0; colNum <= row.getLastCellNum(); colNum++) {
+				Cell cell = row.getCell(colNum);
+				colNames.add(getStringValue(cell));
+			}
+
+			for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+				row = sheet.getRow(rowNum);
+				Map<String, Object> param = new HashMap<String, Object>();
+				for (int colNum = 0; colNum < colNames.size(); colNum++) {
+					String value = s(getStringValue(row.getCell(colNum)));
+					param.put(colNames.get(colNum), value);
+				}
+				result.add(param);
+			}
+		}
+
+		return result;
+	}
+	
+	private String s(final String src) {
+		if (null == src) {
+			return "";
+		}
+		return src;
+	}
+
+	private String readFile(final File file, final Charset charset) {
 		StringBuilder s = new StringBuilder();
 		try {
 			InputStreamReader reader = new InputStreamReader(new FileInputStream(file), charset);
@@ -74,11 +201,10 @@ public class DeveloperTools {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-
 		return s.toString();
 	}
 
-	private List<Map<String, Object>> readListFile(final File file) {
+	private List<Map<String, Object>> readExcel(final File file) {
 		List<Map<String, Object>> data = new ArrayList<Map<String, Object>>();
 		try {
 			Workbook workbook = WorkbookFactory.create(new File("./src/test/data/list.xls"));
