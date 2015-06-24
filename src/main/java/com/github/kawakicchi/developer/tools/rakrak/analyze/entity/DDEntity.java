@@ -38,6 +38,20 @@ public class DDEntity {
 		titles.add(title);
 	}
 
+	public String getTitle() {
+		String title = null;
+		for (DDTitleEntity t : titles) {
+			if (null == t.getLang() || 0 == t.getLang().length()) {
+				title = t.getValue();
+				break;
+			}
+		}
+		if (null == title && 0 < titles.size()) {
+			title = titles.get(0).getValue();
+		}
+		return title;
+	}
+	
 	public List<DDTitleEntity> getTitleList() {
 		return titles;
 	}

@@ -3,17 +3,25 @@ package com.github.kawakicchi.developer.tools.rakrak.analyze;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.digester.BeanPropertySetterRule;
 import org.apache.commons.digester.Digester;
 import org.apache.commons.digester.ObjectCreateRule;
 import org.apache.commons.digester.SetNextRule;
 import org.apache.commons.digester.SetPropertiesRule;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.xml.sax.SAXException;
 
 import com.github.kawakicchi.developer.tools.rakrak.analyze.entity.DDEntity;
@@ -35,58 +43,119 @@ public class RakRakAnalyzer {
 
 		RakRakAnalyzer ana = new RakRakAnalyzer();
 
-		ana.analyze(new File(args[0]));
+		ana.analyze(new File(args[0]), new File(args[1]));
 
 	}
 
-	public void analyze(final File file) {
+	public void analyze(final File file, final File destFile) {
 
 		SystemProperties sp = readSystemProperties(file, "MS932");
 
 		File defDir = file.getParentFile();
 
 		// XMD
+		List<MSGEntity> msgList = new ArrayList<MSGEntity>();
 		for (String xmdName : sp.getXMDList()) {
 			File xmdFile = Paths.get(defDir.getAbsolutePath(), xmdName).toFile();
 			if (xmdFile.isFile()) {
 				XMDEntity xmd = readXMD(xmdFile);
 				if (null != xmd) {
 					for (MSGEntity msg : xmd.getMSGList()) {
-						//System.out.println(msg.toString());
+						msgList.add(msg);
 					}
 				}
 			} else {
 				System.out.println(String.format("Not Found XMD file.[%s]", xmdFile.getAbsoluteFile()));
 			}
 		}
+		
 		// XDD
+		List<DDEntity> ddList = new ArrayList<DDEntity>();
 		for (String xddName : sp.getXDDList()) {
 			File xddFile = Paths.get(defDir.getAbsolutePath(), xddName).toFile();
 			if (xddFile.isFile()) {
 				XDDEntity xdd = readXDD(xddFile);
 				if (null != xdd) {
 					for (DDEntity dd : xdd.getDDList()) {
-						System.out.println(dd.toString());
+						ddList.add(dd);
 					}
 				}
 			} else {
 				System.out.println(String.format("Not Found XDD file.[%s]", xddFile.getAbsoluteFile()));
 			}
 		}
+		
 		// XPD
+		List<ProgramEntity> programList = new ArrayList<ProgramEntity>();
 		for (String xpdName : sp.getXPDList()) {
 			File xpdFile = Paths.get(defDir.getAbsolutePath(), xpdName).toFile();
 			if (xpdFile.isFile()) {
 				XPDEntity xpd = readXPD(xpdFile);
 				if (null != xpd) {
 					for (ProgramEntity prg : xpd.getProgramList()) {
-						//System.out.println(prg.toString());
+						programList.add(prg);
 					}
 				}
 			} else {
 				System.out.println(String.format("Not Found XPD file.[%s]", xpdFile.getAbsoluteFile()));
 			}
 		}
+
+		Workbook workbook = new HSSFWorkbook();
+		
+		writeMSG(msgList,  workbook.createSheet("メッセージ一覧"));
+		writeDD(ddList,  workbook.createSheet("DD一覧"));
+		writeProgram(programList,  workbook.createSheet("プログラム一覧"));
+		
+		
+		FileOutputStream out = null;
+		try {
+			out = new FileOutputStream(destFile);
+			workbook.write(out);
+		} catch (IOException e) {
+			System.out.println(e.toString());
+		} finally {
+			try {
+				if (null != out) {
+					out.close();
+				}
+			} catch (IOException e) {
+				System.out.println(e.toString());
+			}
+		}
+	}
+	
+	private void writeMSG(final List<MSGEntity> list, final Sheet sheet) {
+		// header
+		Row headerRow = sheet.createRow(0);
+		// data
+		int row = 1;
+		for (MSGEntity msg : list) {
+			Row dataRow = sheet.createRow(row);
+			dataRow.createCell(0).setCellValue(String.format("%d", row));
+			dataRow.createCell(1).setCellValue(msg.getId());
+			dataRow.createCell(2).setCellValue(msg.getLang());
+			dataRow.createCell(3).setCellValue(msg.getMode());
+			dataRow.createCell(4).setCellValue(msg.getValue());
+			row ++;
+		}
+	}
+	
+	private void writeDD(final List<DDEntity> list, final Sheet sheet) {
+		// header
+		Row headerRow = sheet.createRow(0);
+		// data
+		int row = 1;
+		for (DDEntity dd : list) {
+			Row dataRow = sheet.createRow(row);
+			dataRow.createCell(0).setCellValue(String.format("%d", row));
+			dataRow.createCell(1).setCellValue(dd.getName());
+			dataRow.createCell(2).setCellValue(dd.getTitle());
+			row ++;
+		}
+	}
+	
+	private void writeProgram(final List<ProgramEntity> list, final Sheet sheet) {
 	}
 
 	private XMDEntity readXMD(final File file) {
@@ -130,7 +199,7 @@ public class RakRakAnalyzer {
 		digester.addRule("XPD/Program/PP", new ObjectCreateRule(ProgramPPEntity.class));
 		digester.addRule("XPD/Program/PP", new SetPropertiesRule("page", "page"));
 		digester.addRule("XPD/Program/PP", new SetNextRule("addPP"));
-		
+
 		digester.addRule("XPD/Program/PP/Option", new ObjectCreateRule(ProgramOptionEntity.class));
 		digester.addRule("XPD/Program/PP/Option", new SetNextRule("setOption"));
 
@@ -138,7 +207,6 @@ public class RakRakAnalyzer {
 		digester.addRule("XPD/Program/PP/Option/Param", new SetPropertiesRule("Name", "name"));
 		digester.addRule("XPD/Program/PP/Option/Param", new BeanPropertySetterRule("value"));
 		digester.addRule("XPD/Program/PP/Option/Param", new SetNextRule("addParam"));
-
 
 		XPDEntity xpd = null;
 		try {
