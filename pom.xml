@@ -41,6 +41,14 @@
 			<version>4.8.1</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>localhost</groupId>
+			<artifactId>ojdbc6</artifactId>
+			<version>unknown</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/src/main/lib/ojdbc6.jar</systemPath>
+		</dependency>
 	</dependencies>
 
 	<build>
