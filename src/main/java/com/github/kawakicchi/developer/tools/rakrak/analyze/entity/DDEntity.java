@@ -8,21 +8,33 @@ public class DDEntity {
 	private String name;
 	private List<DDTitleEntity> titles;
 	private String dbField;
+	private String type;
 	private String size;
 	private String inputType;
+	private String align;
 
 	private String sql;
+
+	private String refButton;
 	private String refWindow;
+	private String refTable;
 	private String plugin;
 
 	public DDEntity() {
 		name = null;
 		titles = new ArrayList<DDTitleEntity>();
 		dbField = null;
+		type = null;
 		size = null;
 		inputType = null;
+		align = null;
+
 		sql = null;
+
+		refButton = null;
 		refWindow = null;
+		refTable = null;
+
 		plugin = null;
 	}
 
@@ -51,7 +63,7 @@ public class DDEntity {
 		}
 		return title;
 	}
-	
+
 	public List<DDTitleEntity> getTitleList() {
 		return titles;
 	}
@@ -62,6 +74,14 @@ public class DDEntity {
 
 	public String getDbfield() {
 		return dbField;
+	}
+
+	public void setType(final String type) {
+		this.type = type;
+	}
+
+	public String getType() {
+		return type;
 	}
 
 	public void setSize(final String size) {
@@ -80,14 +100,37 @@ public class DDEntity {
 		return inputType;
 	}
 
+	public void setAlign(final String value) {
+		align = value;
+	}
+
+	public String getAlign() {
+		return align;
+	}
+
 	public void setSql(final String value) {
 		sql = value;
 	}
-	
+
 	public String getSql() {
 		return sql;
 	}
-	
+
+	public void setRefButtonValue(final String value) {
+		refButton = value;
+	}
+
+	public String getRefButton() {
+		return refButton;
+	}
+
+	public boolean isRefButton() {
+		if (null != refButton && "Y".equals(refButton.toUpperCase())) {
+			return true;
+		}
+		return false;
+	}
+
 	public void setRefWindow(final String value) {
 		refWindow = value;
 	}
@@ -95,11 +138,19 @@ public class DDEntity {
 	public String getRefWindow() {
 		return refWindow;
 	}
-	
+
+	public void setRefTable(final String value) {
+		refTable = value;
+	}
+
+	public String getRefTable() {
+		return refTable;
+	}
+
 	public void setPlugin(final String value) {
 		plugin = value;
 	}
-	
+
 	public String getPlugin() {
 		return plugin;
 	}

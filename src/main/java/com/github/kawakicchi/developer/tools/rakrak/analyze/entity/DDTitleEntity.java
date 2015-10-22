@@ -12,10 +12,11 @@ public class DDTitleEntity {
 	public String getValue() {
 		return value;
 	}
-	
+
 	public void setLang(final String lang) {
 		this.lang = lang;
 	}
+
 	public String getLang() {
 		return lang;
 	}

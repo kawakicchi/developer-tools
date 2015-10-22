@@ -38,7 +38,7 @@ public class MSGEntity {
 	public String getValue() {
 		return value;
 	}
-	
+
 	public String toString() {
 		String ls = "\n";
 		try {
