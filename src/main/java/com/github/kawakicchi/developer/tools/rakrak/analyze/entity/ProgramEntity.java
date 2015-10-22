@@ -64,7 +64,7 @@ public class ProgramEntity {
 		}
 		return title;
 	}
-	
+
 	public ProgramPPEntity getDefaultPP() {
 		ProgramPPEntity pp = null;
 		for (ProgramPPEntity p : pps) {
@@ -76,6 +76,17 @@ public class ProgramEntity {
 		return pp;
 	}
 
+	public List<String> getPlugins() {
+		List<String> plugins = new ArrayList<String>();
+		for (ProgramPPEntity p : pps) {
+			String plugin = p.getPlugin();
+			if (null != plugin && 0 < plugin.length()) {
+				plugins.add(plugin);
+			}
+		}
+		return plugins;
+	}
+
 	public String toString() {
 		String ls = "\n";
 		try {
@@ -84,12 +95,12 @@ public class ProgramEntity {
 		}
 
 		StringBuilder s = new StringBuilder();
-		
+
 		s.append(String.format("Program : %s", name)).append(ls);
 		if (null != getDefaultTitle()) {
 			s.append(String.format("  Title : %s", getDefaultTitle().getValue())).append(ls);
 		}
-		
+
 		StringBuilder buf = new StringBuilder();
 		for (ProgramPatternEntity ptn : getPatternList()) {
 			if (0 < buf.length()) {
@@ -98,7 +109,8 @@ public class ProgramEntity {
 			buf.append(ptn.getValue());
 		}
 		s.append(String.format("  Pattern : %s", buf.toString())).append(ls);
-		
+
 		return s.toString();
 	}
+
 }
