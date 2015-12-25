@@ -13,7 +13,7 @@ public final class OracleDatabaseModel extends AbstractDatabaseModel {
 	public List<User> getUserList(final Connection connection) throws SQLException {
 		List<User> users = new ArrayList<User>();
 
-		String sql = "SELECT username AS name FROM dba_users order by name";
+		String sql = "SELECT username AS name FROM all_users order by name";
 
 		PreparedStatement stat = null;
 		ResultSet rs = null;

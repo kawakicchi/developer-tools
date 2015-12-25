@@ -1,15 +1,18 @@
 package com.github.kawakicchi.developer.dbviewer;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -54,38 +57,21 @@ public class DBDataGrid extends JPanel {
 			}
 		});
 
-		table.addKeyListener(new KeyListener() {
-
-			@Override
-			public void keyTyped(KeyEvent e) {
-				int keycode = e.getKeyCode();
-				int mod = e.getModifiersEx();
-				if ((mod & InputEvent.CTRL_DOWN_MASK) != 0) {
-					String presskey = e.getKeyText(keycode);
-					System.out.println(String.format("%s(%d) + CTRL", presskey, keycode));
-
-					System.out.println(String.format("%d, %d, %d, %d", table.getSelectedColumn(), table.getSelectedRow(), table.getSelectedColumnCount(),
-							table.getSelectedRowCount()));
-
-					// クリップボードへ
-					String str = "AAA\tBBB\r\nCCC\tDDD"; // 保存するテキスト
-					Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-					StringSelection selection = new StringSelection(str);
-					clipboard.setContents(selection, null);
-				}
-				repaint();
-			}
-
-			@Override
-			public void keyReleased(KeyEvent e) {
-
-			}
-
+		table.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-
+				if(e.getModifiers() == KeyEvent.CTRL_MASK && e.getKeyCode() == KeyEvent.VK_C){
+					DBDataGridClipboard c = new DBDataGridClipboard();
+					c.copy(model, table.getSelectedColumn(), table.getSelectedRow(), table.getSelectedColumnCount(), table.getSelectedRowCount());
+					
+					e.consume();
+				}
+				// repaint();
 			}
 		});
+
+		setBackground(Color.red);
+		scroll.setBackground(Color.blue);
 	}
 
 	public void set(final ResultSet rs) throws SQLException {
@@ -113,5 +99,98 @@ public class DBDataGrid extends JPanel {
 				break;
 			}
 		}
+	}
+
+	private static class DBDataGridClipboard {
+		public DBDataGridClipboard() {
+
+		}
+
+		public void copy(final DefaultTableModel model, final int col, final int row, final int colSize, final int rowSize) {
+			Toolkit kit = Toolkit.getDefaultToolkit();
+			Clipboard clip = kit.getSystemClipboard();
+
+			Test test = new Test(model, col, row, colSize, rowSize);
+			clip.setContents(test, null);
+		}
+	}
+
+	private static class Test implements Transferable {
+
+		private final DefaultTableModel model;
+		private final int col;
+		private final int row;
+		private final int colSize;
+		private final int rowSize;
+
+		public Test(final DefaultTableModel model, final int col, final int row, final int colSize, final int rowSize) {
+			this.model = model;
+			this.col = col;
+			this.row = row;
+			this.colSize = colSize;
+			this.rowSize = rowSize;
+		}
+
+		@Override
+		public Object getTransferData(final DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+			StringBuilder s = new StringBuilder();
+			if ("text/html".equals(flavor.getHumanPresentableName())) {
+				s.append("<table style=\"border-style: solid; border-width: thin; table-layout: fixed;\">");
+				s.append("<tr>");
+				for (int bufCol = col; bufCol < col + colSize; bufCol++) {
+					s.append("<td nowrap bgcolor=\"#CCFFCC\"><b>").append(model.getColumnName(bufCol)).append("</b></td>");
+				}
+				s.append("</tr>");
+				for (int bufRow = row; bufRow < row + rowSize; bufRow++) {
+					s.append("<tr style=\"border-style: dotted;\">");
+					for (int bufCol = col; bufCol < col + colSize; bufCol++) {
+						s.append("<td nowrap>").append(model.getValueAt(bufRow, bufCol)).append("</td>");
+					}
+					s.append("</tr>");
+				}
+				s.append("</table>");
+
+			} else {
+				for (int bufCol = col; bufCol < col + colSize; bufCol++) {
+					if (bufCol != col) {
+						s.append("\t");
+					}
+					s.append(model.getColumnName(bufCol));
+				}
+				s.append("\r\n");
+
+				for (int bufRow = row; bufRow < row + rowSize; bufRow++) {
+					for (int bufCol = col; bufCol < col + colSize; bufCol++) {
+						if (bufCol != col) {
+							s.append("\t");
+						}
+						s.append(model.getValueAt(bufRow, bufCol));
+					}
+					s.append("\r\n");
+				}
+			}
+
+			return s.toString();
+		}
+
+		@Override
+		public DataFlavor[] getTransferDataFlavors() {
+			DataFlavor df1 = new DataFlavor("text/html; class=java.lang.String; charset=Unicode", "text/html");
+			DataFlavor df2 = new DataFlavor("text/plain; class=java.lang.String; charset=Unicode", "text/plain");
+			DataFlavor[] dfs = new DataFlavor[] { df1, df2 };
+			return dfs;
+		}
+
+		@Override
+		public boolean isDataFlavorSupported(final DataFlavor flavor) {
+			System.out.println("isDataFlavorSupported("+flavor.getHumanPresentableName()+")");
+			if ("text/html".equals(flavor.getHumanPresentableName())) {
+				return true;
+			} else if ("text/plain".equals(flavor.getHumanPresentableName())) {
+				return true;
+			}
+			return false;
+		}
+
 	}
 }

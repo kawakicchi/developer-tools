@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,12 +26,7 @@ public class DBViewerFrame extends JFrame {
 	/** serialVersionUID */
 	private static final long serialVersionUID = -2512581293435452881L;
 
-	public static void main(final String[] args) {
-		DBViewerFrame frm = new DBViewerFrame();
-		frm.setVisible(true);
-	}
-
-	private DBDataGrid dataGrid;
+	private DBViewerPanel panel;
 
 	public DBViewerFrame() {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -40,18 +34,18 @@ public class DBViewerFrame extends JFrame {
 
 		initMenu();
 
-		dataGrid = new DBDataGrid();
-		dataGrid.setLocation(0, 0);
-		add(dataGrid);
+		panel = new DBViewerPanel();
+		panel.setLocation(0, 0);
+		add(panel);
 
 		addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
 				Insets inset = getInsets();
-				int height = getHeight() - (inset.top + inset.bottom);
+				int height = getHeight() - (inset.top + inset.bottom) - menuBar.getHeight();
 				int width = getWidth() - (inset.left + inset.right);
 				Dimension dimension = new Dimension(width, height);
-				dataGrid.setSize(dimension);
+				panel.setSize(dimension);
 			}
 		});
 
@@ -66,11 +60,12 @@ public class DBViewerFrame extends JFrame {
 				ResultSet rs = null;
 				try {
 
-					stat = connection.prepareStatement("SELECT * FROM DUAL");
+					stat = connection.prepareStatement("select * from TEDI_JUCHU_JOKYO");
 
 					rs = stat.executeQuery();
+					rs.setFetchSize(1000);
 
-					dataGrid.set(rs);
+					panel.setResultSet(rs);
 
 				} catch (SQLException ex) {
 					ex.printStackTrace();
@@ -118,24 +113,11 @@ public class DBViewerFrame extends JFrame {
 	private Connection connection;
 
 	private void init() {
-		try {
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-
-			String url = "jdbc:oracle:thin:@";
-			String user = "xxx";
-			String password = "xxx";
-			/* Connectionの作成 */
-			connection = DriverManager.getConnection(url, user, password);
-		} catch (ClassNotFoundException ex) {
-			ex.printStackTrace();
-		} catch (SQLException ex) {
-			ex.printStackTrace();
-		}
+		connection = DataSource.getInstance().getConnection();
 
 		try {
 
 			DatabaseModel model = new OracleDatabaseModel();
-			System.out.println("User List");
 			List<User> users = model.getUserList(connection);
 			for (User user : users) {
 				System.out.println(user.getName());
@@ -147,12 +129,6 @@ public class DBViewerFrame extends JFrame {
 	}
 
 	private void destory() {
-		if (null != connection) {
-			try {
-				connection.close();
-			} catch (SQLException ex) {
-				ex.printStackTrace();
-			}
-		}
+		DataSource.getInstance().returnConnection(connection);
 	}
 }
