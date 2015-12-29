@@ -8,17 +8,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JSplitPane;
 
 import com.github.kawakicchi.developer.dbviewer.model.DatabaseModel;
-import com.github.kawakicchi.developer.dbviewer.model.DatabaseModel.User;
 import com.github.kawakicchi.developer.dbviewer.model.OracleDatabaseModel;
 
 public class DBViewerFrame extends JFrame {
@@ -26,7 +22,12 @@ public class DBViewerFrame extends JFrame {
 	/** serialVersionUID */
 	private static final long serialVersionUID = -2512581293435452881L;
 
-	private DBViewerPanel panel;
+	private JSplitPane splitpane;
+
+	private DBViewerPanel pnlDB;
+	private DBObjectViewerPanel pnlObj;
+
+	private DatabaseModel model;
 
 	public DBViewerFrame() {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -34,9 +35,19 @@ public class DBViewerFrame extends JFrame {
 
 		initMenu();
 
-		panel = new DBViewerPanel();
-		panel.setLocation(0, 0);
-		add(panel);
+		splitpane = new JSplitPane();
+		splitpane.setLocation(0, 0);
+		splitpane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+		splitpane.setContinuousLayout(true);
+		splitpane.setDividerLocation(600);
+
+		pnlDB = new DBViewerPanel();
+		splitpane.setLeftComponent(pnlDB);
+
+		pnlObj = new DBObjectViewerPanel();
+		splitpane.setRightComponent(pnlObj);
+
+		add(splitpane);
 
 		addComponentListener(new ComponentAdapter() {
 			@Override
@@ -45,7 +56,7 @@ public class DBViewerFrame extends JFrame {
 				int height = getHeight() - (inset.top + inset.bottom) - menuBar.getHeight();
 				int width = getWidth() - (inset.left + inset.right);
 				Dimension dimension = new Dimension(width, height);
-				panel.setSize(dimension);
+				splitpane.setSize(dimension);
 			}
 		});
 
@@ -55,36 +66,6 @@ public class DBViewerFrame extends JFrame {
 			@Override
 			public void windowOpened(WindowEvent e) {
 				init();
-
-				PreparedStatement stat = null;
-				ResultSet rs = null;
-				try {
-
-					stat = connection.prepareStatement("select * from TEDI_JUCHU_JOKYO");
-
-					rs = stat.executeQuery();
-					rs.setFetchSize(1000);
-
-					panel.setResultSet(rs);
-
-				} catch (SQLException ex) {
-					ex.printStackTrace();
-				} finally {
-					if (null != rs) {
-						try {
-							rs.close();
-						} catch (SQLException ex) {
-							ex.printStackTrace();
-						}
-					}
-					if (null != stat) {
-						try {
-							stat.close();
-						} catch (SQLException ex) {
-							ex.printStackTrace();
-						}
-					}
-				}
 			}
 
 			@Override
@@ -114,18 +95,10 @@ public class DBViewerFrame extends JFrame {
 
 	private void init() {
 		connection = DataSource.getInstance().getConnection();
+		model = new OracleDatabaseModel(connection);
 
-		try {
-
-			DatabaseModel model = new OracleDatabaseModel();
-			List<User> users = model.getUserList(connection);
-			for (User user : users) {
-				System.out.println(user.getName());
-			}
-
-		} catch (SQLException ex) {
-			ex.printStackTrace();
-		}
+		pnlDB.setDatabaseModel(model);
+		pnlObj.setDatabaseModel(model);
 	}
 
 	private void destory() {

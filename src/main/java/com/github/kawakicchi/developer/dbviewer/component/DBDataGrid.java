@@ -1,6 +1,5 @@
-package com.github.kawakicchi.developer.dbviewer;
+package com.github.kawakicchi.developer.dbviewer.component;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Toolkit;
@@ -70,8 +69,8 @@ public class DBDataGrid extends JPanel {
 			}
 		});
 
-		setBackground(Color.red);
-		scroll.setBackground(Color.blue);
+		//setBackground(Color.red);
+		//scroll.setBackground(Color.blue);
 	}
 
 	public void set(final ResultSet rs) throws SQLException {

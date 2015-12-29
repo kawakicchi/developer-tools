@@ -19,11 +19,9 @@ public final class DataSource {
 		Connection connection = null;
 		try {
 			Class.forName("oracle.jdbc.driver.OracleDriver");
-
 			String url = "";
 			String user = "";
 			String password = "";
-			/* Connectionの作成 */
 			connection = DriverManager.getConnection(url, user, password);
 		} catch (ClassNotFoundException ex) {
 			ex.printStackTrace();
