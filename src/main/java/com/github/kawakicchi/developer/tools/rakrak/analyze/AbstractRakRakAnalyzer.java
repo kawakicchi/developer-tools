@@ -41,28 +41,29 @@ import com.github.kawakicchi.developer.tools.rakrak.analyze.entity.XDDEntity;
 import com.github.kawakicchi.developer.tools.rakrak.analyze.entity.XMDEntity;
 import com.github.kawakicchi.developer.tools.rakrak.analyze.entity.XPDEntity;
 
-public abstract class AbstractRakRakAnalyzer {
+/**
+ * 
+ * @author Kawakicchi
+ */
+public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 
-	public final void analyze(final File file, final File destFile) {
-		doAnalyze(file, destFile);
-	}
-
-	protected boolean isIgnoreXPDFile(final String name) {
+	protected boolean isIgnoreXPDFileName(final String name) {
 		return false;
 	}
 
-	protected boolean isIgnoreXWDFile(final String name) {
+	protected boolean isIgnoreXWDFileName(final String name) {
 		return false;
 	}
 
-	protected boolean isIgnoreXMDFile(final String name) {
+	protected boolean isIgnoreXMDFileName(final String name) {
 		return false;
 	}
 
-	protected boolean isIgnoreXDDFile(final String name) {
+	protected boolean isIgnoreXDDFileName(final String name) {
 		return false;
 	}
 
+	@Override
 	protected void doAnalyze(final File file, final File destFile) {
 		SystemProperties sp = readSystemProperties(file, "MS932");
 
@@ -175,7 +176,7 @@ public abstract class AbstractRakRakAnalyzer {
 			}
 		}
 	}
-	
+
 	private void writeSheetDDProgramList(final List<DDEntity> listDD, final List<ProgramEntity> listPGP, final List<ProgramEntity> listPGW, final Sheet sheet,
 			final Workbook workbook) {
 		CellStyle cellStylePGName = workbook.createCellStyle();
@@ -334,6 +335,85 @@ public abstract class AbstractRakRakAnalyzer {
 		sheet.autoSizeColumn(0);
 		sheet.autoSizeColumn(1);
 		sheet.autoSizeColumn(2);
+	}
+
+	private SystemProperties readSystemProperties(final File file, final String charset) {
+		SystemProperties result = new SystemProperties();
+
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
+
+			String buffer = null;
+			while (null != (buffer = reader.readLine())) {
+				if (buffer.trim().startsWith("#")) {
+					continue;
+				}
+
+				int index = buffer.indexOf("=");
+				if (-1 == index) {
+					continue;
+				}
+
+				String key = buffer.substring(0, index).trim().toUpperCase();
+				String value = buffer.substring(index + 1).trim();
+
+				// System.out.println(String.format("%s = %s", key, value));
+
+				if ("XPD".equals(key)) {
+					List<String> names = split(value);
+					for (String name : names) {
+						if (!isIgnoreXPDFileName(name)) {
+							result.addXPD(name);
+						} else {
+
+						}
+					}
+				} else if ("XWD".equals(key)) {
+					List<String> names = split(value);
+					for (String name : names) {
+						if (!isIgnoreXWDFileName(name)) {
+							result.addXWD(name);
+						} else {
+
+						}
+					}
+					result.addXWDList(split(value));
+				} else if ("XMD".equals(key)) {
+					List<String> names = split(value);
+					for (String name : names) {
+						if (!isIgnoreXMDFileName(name)) {
+							result.addXMD(name);
+						} else {
+
+						}
+					}
+					result.addXMDList(split(value));
+				} else if ("XDD".equals(key)) {
+					List<String> names = split(value);
+					for (String name : names) {
+						if (!isIgnoreXDDFileName(name)) {
+							result.addXDD(name);
+						} else {
+
+						}
+					}
+					result.addXDDList(split(value));
+				}
+			}
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		} finally {
+			try {
+				if (null != reader) {
+					reader.close();
+				}
+			} catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+		return result;
 	}
 
 	private XMDEntity readXMD(final File file) {
@@ -499,85 +579,6 @@ public abstract class AbstractRakRakAnalyzer {
 		return xdd;
 	}
 
-	private SystemProperties readSystemProperties(final File file, final String charset) {
-		SystemProperties result = new SystemProperties();
-
-		BufferedReader reader = null;
-		try {
-			reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
-
-			String buffer = null;
-			while (null != (buffer = reader.readLine())) {
-				if (buffer.trim().startsWith("#")) {
-					continue;
-				}
-
-				int index = buffer.indexOf("=");
-				if (-1 == index) {
-					continue;
-				}
-
-				String key = buffer.substring(0, index).trim().toUpperCase();
-				String value = buffer.substring(index + 1).trim();
-
-				// System.out.println(String.format("%s = %s", key, value));
-
-				if ("XPD".equals(key)) {
-					List<String> names = split(value);
-					for (String name : names) {
-						if (!isIgnoreXPDFile(name)) {
-							result.addXPD(name);
-						} else {
-
-						}
-					}
-				} else if ("XWD".equals(key)) {
-					List<String> names = split(value);
-					for (String name : names) {
-						if (!isIgnoreXWDFile(name)) {
-							result.addXWD(name);
-						} else {
-
-						}
-					}
-					result.addXWDList(split(value));
-				} else if ("XMD".equals(key)) {
-					List<String> names = split(value);
-					for (String name : names) {
-						if (!isIgnoreXMDFile(name)) {
-							result.addXMD(name);
-						} else {
-
-						}
-					}
-					result.addXMDList(split(value));
-				} else if ("XDD".equals(key)) {
-					List<String> names = split(value);
-					for (String name : names) {
-						if (!isIgnoreXDDFile(name)) {
-							result.addXDD(name);
-						} else {
-
-						}
-					}
-					result.addXDDList(split(value));
-				}
-			}
-
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		} finally {
-			try {
-				if (null != reader) {
-					reader.close();
-				}
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
-		return result;
-	}
-
 	protected void sortXPD(final List<ProgramEntity> list) {
 		Collections.sort(list, new Comparator<ProgramEntity>() {
 			@Override
@@ -616,27 +617,5 @@ public abstract class AbstractRakRakAnalyzer {
 				return o1.getName().compareTo(o2.getName());
 			}
 		});
-	}
-
-	private List<String> split(final String string) {
-		List<String> result = new ArrayList<String>();
-		if (null != string) {
-			String[] split = string.split(",");
-			for (String s : split) {
-				String buffer = s.trim();
-				if (0 < buffer.length()) {
-					result.add(buffer);
-				}
-			}
-		}
-		return result;
-	}
-
-	private static String s(final String string) {
-		String s = "";
-		if (null != string) {
-			s = string;
-		}
-		return s;
 	}
 }
