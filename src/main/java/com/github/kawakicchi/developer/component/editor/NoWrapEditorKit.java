@@ -1,4 +1,4 @@
-package com.github.kawakicchi.developer.component;
+package com.github.kawakicchi.developer.component.editor;
 
 import java.awt.FontMetrics;
 

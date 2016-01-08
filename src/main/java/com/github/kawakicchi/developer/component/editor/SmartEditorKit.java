@@ -1,4 +1,4 @@
-package com.github.kawakicchi.developer.component;
+package com.github.kawakicchi.developer.component.editor;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -130,7 +130,9 @@ public class SmartEditorKit extends StyledEditorKit {
 	}
 
 	private static class WhitespaceLabelView extends LabelView {
+		
 		private static final Color pc = new Color(130, 140, 120);
+		private static final BasicStroke line = new BasicStroke(1f);
 		private static final BasicStroke dashed = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 1f }, 0f);
 
 		public WhitespaceLabelView(Element elem) {
@@ -144,7 +146,6 @@ public class SmartEditorKit extends StyledEditorKit {
 			Stroke stroke = g2.getStroke();
 			Rectangle alloc = (a instanceof Rectangle) ? (Rectangle) a : a.getBounds();
 			FontMetrics fontMetrics = g.getFontMetrics();
-			int spaceWidth = fontMetrics.stringWidth("　");
 			int sumOfTabs = 0;
 			String text = getText(getStartOffset(), getEndOffset()).toString();
 			for (int i = 0; i < text.length(); i++) {
@@ -153,10 +154,18 @@ public class SmartEditorKit extends StyledEditorKit {
 				int sx = alloc.x + previousStringWidth;
 				int sy = alloc.y + alloc.height - fontMetrics.getDescent();
 				if ("　".equals(s)) {
+					int spaceWidth = fontMetrics.stringWidth("　");
 					g2.setStroke(dashed);
 					g2.setPaint(pc);
 					g2.drawLine(sx + 1, sy - 1, sx + spaceWidth - 2, sy - 1);
 					g2.drawLine(sx + 2, sy, sx + spaceWidth - 2, sy);
+				} else if (" ".equals(s)) {
+					int spaceWidth = fontMetrics.stringWidth(" ");
+					g2.setStroke(line);
+					g2.setPaint(pc);
+					g2.drawLine(sx + 1, sy - 1 - spaceWidth/2, sx + 1, sy - 1);
+					g2.drawLine(sx + 1, sy - 1, sx + spaceWidth - 2, sy - 1);
+					g2.drawLine(sx + spaceWidth - 2, sy - 1, sx + spaceWidth - 2, sy - 1 - spaceWidth/2);
 				} else if ("\t".equals(s)) {
 					int tabWidth = (int) getTabExpander().nextTabStop((float) sx, i) - sx;
 					g2.setColor(pc);

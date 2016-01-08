@@ -19,11 +19,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
 import com.github.kawakicchi.developer.component.BasicFrame;
-import com.github.kawakicchi.developer.component.BasicTextPane;
 import com.github.kawakicchi.developer.component.LabelStatusItem;
-import com.github.kawakicchi.developer.component.LineNumberView;
-import com.github.kawakicchi.developer.component.SQLTextPane;
 import com.github.kawakicchi.developer.component.StatusBar;
+import com.github.kawakicchi.developer.component.editor.BasicTextPane;
+import com.github.kawakicchi.developer.component.editor.TextLineNumberView;
+import com.github.kawakicchi.developer.component.editor.SQLTextPane;
 
 public class ExplainFrame extends BasicFrame {
 
@@ -31,7 +31,16 @@ public class ExplainFrame extends BasicFrame {
 	private static final long serialVersionUID = 37172323649760837L;
 
 	private JMenu menuFile;
+	private JMenuItem menuFileDBConnect;
+	private JMenuItem menuFileDBLogout;
 	private JMenuItem menuFileExit;
+
+	private JMenu menuSQL;
+	private JMenuItem menuSQLExecute;
+
+	private JMenu menuTool;
+
+	private JMenu menuHelp;
 
 	private JSplitPane pnlSplitMain;
 	private JSplitPane pnlSplitSub;
@@ -50,6 +59,9 @@ public class ExplainFrame extends BasicFrame {
 	}
 
 	private void doExecute(final String sql) {
+		
+	}
+	private void doExplain(final String sql) {
 		Thread thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -67,9 +79,9 @@ public class ExplainFrame extends BasicFrame {
 		try {
 
 			Class.forName("oracle.jdbc.driver.OracleDriver");
-			String url = "";
-			String user = "";
-			String password = "";
+			String url = "jdbc:oracle:thin:@bidbtest.elecom.co.jp:1521:RREBST";
+			String user = "RAKFW2";
+			String password = "RAKFW2T";
 			connection = DriverManager.getConnection(url, user, password);
 			connection.setAutoCommit(true);
 
@@ -90,11 +102,11 @@ public class ExplainFrame extends BasicFrame {
 		}
 
 		long end = System.nanoTime();
-		long time = end-start;
+		long time = end - start;
 		if (time < 1000000000) {
-			lblStatus.setText(String.format("%.0f ms",   (double)(time)/1000000.f ));
+			lblStatus.setText(String.format("%.0f ms", (double) (time) / 1000000.f));
 		} else {
-			lblStatus.setText(String.format("%.2fs", (double)(time)/1000000000.f ));
+			lblStatus.setText(String.format("%.2fs", (double) (time) / 1000000000.f));
 		}
 	}
 
@@ -118,7 +130,7 @@ public class ExplainFrame extends BasicFrame {
 		pnlScrollExplain = new JScrollPane(txtExplain);
 		pnlScrollConsole = new JScrollPane(txtConsole);
 
-		pnlScrollSQL.setRowHeaderView(new LineNumberView(txtSQL));
+		pnlScrollSQL.setRowHeaderView(new TextLineNumberView(txtSQL));
 
 		pnlSplitSub.setTopComponent(pnlScrollExplain);
 		pnlSplitSub.setBottomComponent(pnlScrollConsole);
@@ -129,8 +141,12 @@ public class ExplainFrame extends BasicFrame {
 		txtSQL.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(final KeyEvent e) {
-				if (e.getModifiers() == KeyEvent.CTRL_MASK && e.getKeyCode() == KeyEvent.VK_R) {
-					doExecute(txtSQL.getText());
+				if (e.getModifiers() == KeyEvent.CTRL_MASK) {
+					if (e.getKeyCode() == KeyEvent.VK_R) {
+						doExecute(txtSQL.getText());
+					}else if (e.getKeyCode() == KeyEvent.VK_P) {
+						doExplain(txtSQL.getText());
+					}
 				}
 			}
 		});
@@ -139,13 +155,40 @@ public class ExplainFrame extends BasicFrame {
 	}
 
 	protected void doInitMenuBar(final JMenuBar menuBar) {
+		// File Menu
 		menuFile = new JMenu(LabelManager.get("Menu.File"));
 		menuFile.setMnemonic(KeyEvent.VK_F);
 		menuBar.add(menuFile);
 
+		menuFileDBConnect = new JMenuItem(LabelManager.get("Menu.File.DB.Connect"));
+		menuFile.add(menuFileDBConnect);
+
+		menuFileDBLogout = new JMenuItem(LabelManager.get("Menu.File.DB.Logout"));
+		menuFile.add(menuFileDBLogout);
+
+		menuFile.addSeparator();
+
 		menuFileExit = new JMenuItem(LabelManager.get("Menu.File.Exit"));
 		menuFileExit.setMnemonic(KeyEvent.VK_X);
 		menuFile.add(menuFileExit);
+
+		// SQL Menu
+		menuSQL = new JMenu(LabelManager.get("Menu.SQL"));
+		menuSQL.setMnemonic(KeyEvent.VK_S);
+		menuBar.add(menuSQL);
+
+		menuSQLExecute = new JMenuItem(LabelManager.get("Menu.SQL.Execute"));
+		menuSQL.add(menuSQLExecute);
+
+		// Tool Menu
+		menuTool = new JMenu(LabelManager.get("Menu.Tool"));
+		menuTool.setMnemonic(KeyEvent.VK_T);
+		menuBar.add(menuTool);
+
+		// Help Menu
+		menuHelp = new JMenu(LabelManager.get("Menu.Help"));
+		menuHelp.setMnemonic(KeyEvent.VK_H);
+		menuBar.add(menuHelp);
 	}
 
 	protected void doInitStatusBar(final StatusBar statusBar) {

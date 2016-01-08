@@ -1,4 +1,4 @@
-package com.github.kawakicchi.developer.component;
+package com.github.kawakicchi.developer.component.editor;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -19,7 +19,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
 
-public class LineNumberView extends JComponent {
+public class TextLineNumberView extends JComponent {
 
 	/** serialVersionUID */
 	private static final long serialVersionUID = 5766991295487339962L;
@@ -35,7 +35,7 @@ public class LineNumberView extends JComponent {
 	private final int fontDescent;
 	private final int fontLeading;
 
-	public LineNumberView(JTextPane textArea) {
+	public TextLineNumberView(JTextPane textArea) {
 		this.textArea = textArea;
 		Font font = textArea.getFont();
 		fontMetrics = getFontMetrics(font);
