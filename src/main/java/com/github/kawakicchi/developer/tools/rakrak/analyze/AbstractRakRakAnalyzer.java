@@ -137,15 +137,23 @@ public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 		}
 		sortXWD(programWList);
 
-		Pattern ptn = Pattern.compile("dd\\.([a-z0-9_]+)\\.window\\.([a-z0-9_]+)");
+		// ウインドウ呼出し
+		Pattern ptn1 = Pattern.compile("dd\\.([a-z0-9_]+)\\.window\\.([a-z0-9_]+)");
+		Pattern ptn2 = Pattern.compile("^([^?]*).*$");
 		for (ProgramEntity prg : programPList) {
 			for (ProgramPPEntity pp : prg.getPPList()) {
 				ProgramOptionEntity option = pp.getOption();
 				if (null != option) {
 					for (ProgramOptionParamEntity param : pp.getOption().getParamList()) {
-						Matcher m = ptn.matcher(param.getName());
-						if (m.matches()) {
+						Matcher m1 = ptn1.matcher(param.getName());
+						if (m1.matches()) {
 							// System.out.println(String.format("%s : %s", m.group(1), m.group(2)));
+							if ("url".equals(m1.group(2))) {
+								Matcher m2 = ptn2.matcher(param.getValue());
+								if (m2.matches()) {
+									System.out.println(String.format("%s", m2.group(1)));
+								}
+							}
 						}
 					}
 				}
@@ -275,10 +283,11 @@ public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 		headRow.createCell(3).setCellValue("DB Field");
 		headRow.createCell(4).setCellValue("Type");
 		headRow.createCell(5).setCellValue("Size");
-		headRow.createCell(6).setCellValue("Align");
-		headRow.createCell(7).setCellValue("Ref Button");
-		headRow.createCell(8).setCellValue("Ref Window");
-		headRow.createCell(9).setCellValue("Ref Table");
+		headRow.createCell(6).setCellValue("Length");
+		headRow.createCell(7).setCellValue("Align");
+		headRow.createCell(8).setCellValue("Ref Button");
+		headRow.createCell(9).setCellValue("Ref Window");
+		headRow.createCell(10).setCellValue("Ref Table");
 		// data
 		int row = 1;
 		for (DDEntity dd : list) {
@@ -289,10 +298,11 @@ public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 			dataRow.createCell(3).setCellValue(s(dd.getDbfield()));
 			dataRow.createCell(4).setCellValue(s(dd.getType()));
 			dataRow.createCell(5).setCellValue(s(dd.getSize()));
-			dataRow.createCell(6).setCellValue(s(dd.getAlign()));
-			dataRow.createCell(7).setCellValue(s(dd.getRefButton()));
-			dataRow.createCell(8).setCellValue(s(dd.getRefWindow()));
-			dataRow.createCell(9).setCellValue(s(dd.getRefTable()));
+			dataRow.createCell(6).setCellValue(s(dd.getLength()));
+			dataRow.createCell(7).setCellValue(s(dd.getAlign()));
+			dataRow.createCell(8).setCellValue(s(dd.getRefButton()));
+			dataRow.createCell(9).setCellValue(s(dd.getRefWindow()));
+			dataRow.createCell(10).setCellValue(s(dd.getRefTable()));
 			row++;
 		}
 
@@ -302,7 +312,7 @@ public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 		sheet.autoSizeColumn(3);
 		sheet.autoSizeColumn(4);
 		sheet.autoSizeColumn(5);
-		sheet.autoSizeColumn(6);
+		sheet.autoSizeColumn(7);
 	}
 
 	private void writeSheetProgramList(final List<ProgramEntity> list, final Sheet sheet) {
@@ -554,6 +564,7 @@ public abstract class AbstractRakRakAnalyzer extends AbstractAnalyzer {
 		digester.addRule("XDD/DD/DBFIELD", new BeanPropertySetterRule("dbfield"));
 		digester.addRule("XDD/DD/TYPE", new BeanPropertySetterRule("type"));
 		digester.addRule("XDD/DD/SIZE", new BeanPropertySetterRule("size"));
+		digester.addRule("XDD/DD/LENGTH", new BeanPropertySetterRule("length"));
 		digester.addRule("XDD/DD/INPUTTYPE", new BeanPropertySetterRule("inputType"));
 		digester.addRule("XDD/DD/ALIGN", new BeanPropertySetterRule("align"));
 		digester.addRule("XDD/DD/SQL", new BeanPropertySetterRule("sql"));

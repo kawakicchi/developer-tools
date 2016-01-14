@@ -10,6 +10,7 @@ public class DDEntity {
 	private String dbField;
 	private String type;
 	private String size;
+	private Integer length;
 	private String inputType;
 	private String align;
 
@@ -26,6 +27,7 @@ public class DDEntity {
 		dbField = null;
 		type = null;
 		size = null;
+		length = null;
 		inputType = null;
 		align = null;
 
@@ -92,6 +94,14 @@ public class DDEntity {
 		return size;
 	}
 
+	public void setLength(final Integer length) {
+		this.length = length;
+	}
+	
+	public Integer getLength() {
+		return length;
+	}
+	
 	public void setInputType(final String value) {
 		inputType = value;
 	}

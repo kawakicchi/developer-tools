@@ -62,7 +62,7 @@ public class DBViewerPanel extends JPanel {
 				ResultSet rs = null;
 				try {
 
-					stat = model.prepareStatement(text);
+					//stat = model.prepareStatement(text);
 					rs = stat.executeQuery();
 					rs.setFetchSize(1000);
 

@@ -15,7 +15,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JSplitPane;
 
 import com.github.kawakicchi.developer.dbviewer.model.DatabaseModel;
-import com.github.kawakicchi.developer.dbviewer.model.OracleDatabaseModel;
 
 public class DBViewerFrame extends JFrame {
 
@@ -95,7 +94,7 @@ public class DBViewerFrame extends JFrame {
 
 	private void init() {
 		connection = DataSource.getInstance().getConnection();
-		model = new OracleDatabaseModel(connection);
+		//model = new OracleDatabaseModel(connection);
 
 		pnlDB.setDatabaseModel(model);
 		pnlObj.setDatabaseModel(model);

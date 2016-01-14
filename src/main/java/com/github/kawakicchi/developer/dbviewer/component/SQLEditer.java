@@ -1,6 +1,5 @@
 package com.github.kawakicchi.developer.dbviewer.component;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;

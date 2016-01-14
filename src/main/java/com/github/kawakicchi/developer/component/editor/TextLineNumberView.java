@@ -101,6 +101,7 @@ public class TextLineNumberView extends JComponent {
 		g.setColor(getBackground());
 		Rectangle clip = g.getClipBounds();
 		g.fillRect(clip.x, clip.y, clip.width, clip.height);
+		// System.out.println(String.format("clip %d %d %d %d", clip.x, clip.y, clip.width, clip.height));
 
 		g.setColor(getForeground());
 		int base = clip.y;

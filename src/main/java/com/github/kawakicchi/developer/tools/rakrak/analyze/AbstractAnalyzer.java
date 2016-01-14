@@ -38,4 +38,11 @@ public abstract class AbstractAnalyzer implements Analyzer {
 		}
 		return s;
 	}
+	protected static final String s(final Integer integer) {
+		String s = "";
+		if (null != integer) {
+			s = integer.toString();
+		}
+		return s;
+	}
 }

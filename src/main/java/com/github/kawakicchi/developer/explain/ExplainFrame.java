@@ -1,15 +1,18 @@
 package com.github.kawakicchi.developer.explain;
 
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -17,13 +20,28 @@ import javax.swing.JMenuItem;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 
 import com.github.kawakicchi.developer.component.BasicFrame;
 import com.github.kawakicchi.developer.component.LabelStatusItem;
+import com.github.kawakicchi.developer.component.ResultSetTable;
+import com.github.kawakicchi.developer.component.ResultSetTable.DataColumn;
 import com.github.kawakicchi.developer.component.StatusBar;
 import com.github.kawakicchi.developer.component.editor.BasicTextPane;
 import com.github.kawakicchi.developer.component.editor.TextLineNumberView;
 import com.github.kawakicchi.developer.component.editor.SQLTextPane;
+import com.github.kawakicchi.developer.database.DatabaseManager;
+import com.github.kawakicchi.developer.dbviewer.component.DBObjectPanel;
+import com.github.kawakicchi.developer.dbviewer.component.DBObjectTable;
+import com.github.kawakicchi.developer.dbviewer.model.OracleDatabaseModel;
+import com.github.kawakicchi.developer.explain.task.ExplainTask;
+import com.github.kawakicchi.developer.explain.task.QueryTask;
+import com.github.kawakicchi.developer.task.Task;
+import com.github.kawakicchi.developer.task.TaskAdapter;
+import com.github.kawakicchi.developer.task.TaskManager;
+import com.github.kawakicchi.developer.task.TaskManagerListener;
+import com.github.kawakicchi.developer.util.FileUtility;
+import com.github.kawakicchi.developer.util.FormatUtility;
 
 public class ExplainFrame extends BasicFrame {
 
@@ -43,75 +61,158 @@ public class ExplainFrame extends BasicFrame {
 	private JMenu menuHelp;
 
 	private JSplitPane pnlSplitMain;
-	private JSplitPane pnlSplitSub;
+	private JSplitPane pnlSplitSubLeft;
 	private JScrollPane pnlScrollSQL;
-	private JScrollPane pnlScrollExplain;
 	private JScrollPane pnlScrollConsole;
 	private SQLTextPane txtSQL;
-	private BasicTextPane txtExplain;
+	private JTabbedPane tabSub;
+
+	private JSplitPane pnlSplitSubRight;
+	private DBObjectPanel pnlDBObject;
+	private DBObjectTable tblDBObject;
+	
+	private ResultSetTable tblResult;
 	private BasicTextPane txtConsole;
 
 	private LabelStatusItem lblStatus;
 	private JProgressBar prgStatus;
 
+	private Thread endThread;
+
 	public ExplainFrame() {
 		setTitle(LabelManager.get("Title"));
-	}
-
-	private void doExecute(final String sql) {
 		
-	}
-	private void doExplain(final String sql) {
-		Thread thread = new Thread(new Runnable() {
+		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter() {
 			@Override
-			public void run() {
-				threadRun(sql);
+			public void windowOpened(WindowEvent e) {
+				TaskManager.getInstance().addTaskManagerListener(new TaskManagerListener() {
+					@Override
+					public void taskManagerTaskStart(final Task task) {
+						prgStatus.setIndeterminate(true); // 不確定
+					}
+					@Override
+					public void taskManagerTaskFinished(final Task task) {
+						prgStatus.setIndeterminate(false); // 確定
+					}
+				});
+				
+				TaskManager.getInstance().start();
+			}
+			@Override
+			public void windowClosing(WindowEvent e) {
+				if (TaskManager.getInstance().isStop()) {
+					dispose();
+				} else {
+					if (null == endThread) {
+						TaskManager.getInstance().stop();
+						endThread = new Thread(new Runnable() {
+							@Override
+							public void run() {
+								while (!TaskManager.getInstance().isStop()) {
+									try {
+									Thread.sleep(100);
+									} catch (InterruptedException ex) {
+										ex.printStackTrace();
+									}
+								}
+								dispose();
+							}
+						});
+						endThread.start();
+					}
+				}
+			}
+			@Override
+			public void windowClosed(WindowEvent e) {
 			}
 		});
-		thread.start();
 	}
 
-	private void threadRun(final String sql) {
-		lblStatus.setText(MessageManager.get("MSG0001"));
-		long start = System.nanoTime();
-
-		Connection connection = null;
-		try {
-
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-			String url = "jdbc:oracle:thin:@bidbtest.elecom.co.jp:1521:RREBST";
-			String user = "RAKFW2";
-			String password = "RAKFW2T";
-			connection = DriverManager.getConnection(url, user, password);
-			connection.setAutoCommit(true);
-
-			Explain explain = new Explain(connection);
-			ExplainResult result = explain.explain(sql);
-
-			txtConsole.setText(result.getLog());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			try {
-				if (null != connection && !connection.isClosed()) {
-					connection.close();
-				}
-			} catch (SQLException ex) {
-				ex.printStackTrace();
+	private void doQuery(final String sql) {
+		QueryTask task = new QueryTask(sql, DatabaseManager.getDatasource("DBNAME"));
+		task.addTaskListener(new TaskAdapter() {
+			@Override
+			public void taskStart(final Task task) {
+				lblStatus.setText(MessageManager.get("MSG0001"));
 			}
-		}
-
-		long end = System.nanoTime();
-		long time = end - start;
-		if (time < 1000000000) {
-			lblStatus.setText(String.format("%.0f ms", (double) (time) / 1000000.f));
-		} else {
-			lblStatus.setText(String.format("%.2fs", (double) (time) / 1000000000.f));
-		}
+			@Override
+			public void taskSuccess(final Task task) {
+				tabSub.setSelectedComponent(tblResult);
+			}
+			@Override
+			public void taskError(final Task task) {
+			}
+			@Override
+			public void taskFinished(final Task task) {
+				lblStatus.setText( FormatUtility.nanoTimeToString( ((QueryTask)task).getExecuteTime() ) );
+			}
+		});
+		task.addQueryTaskListener(new QueryTask.QueryTaskListener() {
+			private List<DataColumn> columns;
+			@Override
+			public void queryTaskResultQuery(final ResultSet resultSet) throws SQLException {
+				resultSet.setFetchSize(1000);
+				
+				columns = ExplainFrame.createDataColumn(resultSet);
+				tblResult.setColumns(columns);
+			}
+			@Override
+			public void queryTaskRecord(final ResultSet resultSet) throws SQLException {
+				List<Object> record = ExplainFrame.createRecord(resultSet, columns);
+				tblResult.addRecord(record);
+			}
+		});
+		TaskManager.queueTask(task);
 	}
 
+	private void doExplain(final String sql) {
+		ExplainTask task = new ExplainTask(sql, DatabaseManager.getDatasource("DBNAME"));
+		task.addTaskListener(new TaskAdapter() {
+			@Override
+			public void taskStart(final Task task) {
+				lblStatus.setText(MessageManager.get("MSG0001"));
+			}
+			@Override
+			public void taskSuccess(final Task task) {
+				tabSub.setSelectedComponent(pnlScrollConsole);
+				txtConsole.setText(  ((ExplainTask)task).getResult().getLog() );
+			}
+			@Override
+			public void taskError(final Task task) {
+			}
+			@Override
+			public void taskFinished(final Task task) {
+				lblStatus.setText( FormatUtility.nanoTimeToString( ((ExplainTask)task).getExecuteTime() ) );
+			}
+		});
+		TaskManager.queueTask(task);
+	}
+
+	private void doDatabaseList() {
+		DatabaseListDialog dlg = new DatabaseListDialog(this, true);
+		dlg.setVisible(true);
+	}
+	
+	private static List<DataColumn> createDataColumn(final ResultSet rs) throws SQLException {
+		List<DataColumn> columns = new ArrayList<ResultSetTable.DataColumn>();
+		ResultSetMetaData meta = rs.getMetaData();
+		for (int i = 1 ; i <= meta.getColumnCount(); i++) {
+			DataColumn column = new DataColumn(meta.getColumnName(i), meta.getColumnType(i));
+			columns.add(column);
+		}
+		return columns;
+	}
+	private static List<Object> createRecord(final ResultSet rs, final List<DataColumn> columns) throws SQLException {
+		List<Object> data = new ArrayList<Object>();
+		for (int i = 0 ; i < columns.size() ; i++) {
+			data.add(rs.getObject(i+1));
+		}
+		return data;
+	}
+	
 	private void doLoad() {
-		String sql = read(new File("sample.sql"));
+		String sql = FileUtility.read(new File("sample.sql"), "Windows-31J");
 		txtSQL.setText(sql);
 	}
 
@@ -119,23 +220,40 @@ public class ExplainFrame extends BasicFrame {
 		pnlSplitMain = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		pnlSplitMain.setContinuousLayout(true);
 
-		pnlSplitSub = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		pnlSplitSub.setContinuousLayout(true);
+		pnlSplitSubLeft = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		pnlSplitSubLeft.setContinuousLayout(true);
+
+		pnlSplitSubRight = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		pnlSplitSubRight.setContinuousLayout(true);
 
 		txtSQL = new SQLTextPane();
-		txtExplain = new BasicTextPane();
 		txtConsole = new BasicTextPane();
+		
+		tabSub = new JTabbedPane();
 
 		pnlScrollSQL = new JScrollPane(txtSQL);
-		pnlScrollExplain = new JScrollPane(txtExplain);
 		pnlScrollConsole = new JScrollPane(txtConsole);
+		
+		pnlDBObject = new DBObjectPanel();
+		pnlDBObject.setDatabaseModel(new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME")));
+		tblDBObject = new DBObjectTable();
+		
+		tblResult = new ResultSetTable();
 
 		pnlScrollSQL.setRowHeaderView(new TextLineNumberView(txtSQL));
 
-		pnlSplitSub.setTopComponent(pnlScrollExplain);
-		pnlSplitSub.setBottomComponent(pnlScrollConsole);
-		pnlSplitMain.setLeftComponent(pnlScrollSQL);
-		pnlSplitMain.setRightComponent(pnlSplitSub);
+		tabSub.add(LabelManager.get("Tab.Title.Console"), pnlScrollConsole);
+		tabSub.add(LabelManager.get("Tab.Title.DataGrid"), tblResult);
+		// pnlScrollExplain
+
+		pnlSplitSubRight.setTopComponent(pnlDBObject);
+		pnlSplitSubRight.setBottomComponent(tblDBObject);
+		pnlSplitSubRight.setDividerLocation(120);
+		
+		pnlSplitSubLeft.setTopComponent(pnlScrollSQL);
+		pnlSplitSubLeft.setBottomComponent(tabSub);
+		pnlSplitMain.setLeftComponent(pnlSplitSubRight);
+		pnlSplitMain.setRightComponent(pnlSplitSubLeft);
 		add(pnlSplitMain);
 
 		txtSQL.addKeyListener(new KeyAdapter() {
@@ -143,7 +261,7 @@ public class ExplainFrame extends BasicFrame {
 			public void keyPressed(final KeyEvent e) {
 				if (e.getModifiers() == KeyEvent.CTRL_MASK) {
 					if (e.getKeyCode() == KeyEvent.VK_R) {
-						doExecute(txtSQL.getText());
+						doQuery(txtSQL.getText());
 					}else if (e.getKeyCode() == KeyEvent.VK_P) {
 						doExplain(txtSQL.getText());
 					}
@@ -189,48 +307,29 @@ public class ExplainFrame extends BasicFrame {
 		menuHelp = new JMenu(LabelManager.get("Menu.Help"));
 		menuHelp.setMnemonic(KeyEvent.VK_H);
 		menuBar.add(menuHelp);
+		
+		
+		menuFileDBConnect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doDatabaseList();
+			}
+		});
 	}
 
 	protected void doInitStatusBar(final StatusBar statusBar) {
 		lblStatus = new LabelStatusItem();
-		//lblStatus.setForeground(Color.ORANGE);
-		//lblStatus.setBackground(Color.RED);
-		//lblStatus.setOpaque(true);
-		//lblStatus.setText("test");
 		statusBar.add(lblStatus);
 
 		prgStatus = new JProgressBar();
 		prgStatus.setSize(160, 10);
+		prgStatus.setIndeterminate(false); // 確定
 		statusBar.add(prgStatus);
 	}
 
 	protected void doResized(final Dimension dimension) {
 		pnlSplitMain.setSize(dimension);
-		pnlSplitMain.setDividerLocation(getWidth() / 2);
-		pnlSplitSub.setDividerLocation(getHeight() / 2);
-	}
-
-	private String read(final File file) {
-		StringBuffer sb = new StringBuffer();
-		InputStreamReader reader = null;
-		try {
-			reader = new InputStreamReader(new FileInputStream(file), "Windows-31J");
-			char[] buffer = new char[1024];
-			int size = -1;
-			while (-1 != (size = reader.read(buffer, 0, 1024))) {
-				sb.append(buffer, 0, size);
-			}
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		} finally {
-			try {
-				if (null != reader) {
-					reader.close();
-				}
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
-		return sb.toString();
+		pnlSplitMain.setDividerLocation(200);
+		pnlSplitSubLeft.setDividerLocation(getHeight() / 2);
 	}
 }

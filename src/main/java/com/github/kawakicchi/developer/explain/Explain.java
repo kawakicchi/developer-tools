@@ -1,5 +1,6 @@
 package com.github.kawakicchi.developer.explain;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,11 +8,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.kawakicchi.developer.database.DatabaseManager;
+
 public class Explain {
 
 	public static void main(final String[] args) {
 		LabelManager.getInstance().load();
 		MessageManager.getInstance().load();
+		DatabaseManager.getInstance().load(new File("database.xml"));
 
 		ExplainFrame frm = new ExplainFrame();
 		frm.setVisible(true);

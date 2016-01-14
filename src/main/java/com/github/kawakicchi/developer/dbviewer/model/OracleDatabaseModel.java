@@ -7,20 +7,23 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.github.kawakicchi.developer.database.Datasource;
+
 public final class OracleDatabaseModel extends AbstractDatabaseModel {
 
-	private Connection connection;
+	private Datasource datasource;
 
-	public OracleDatabaseModel(final Connection connection) {
-		this.connection = connection;
+	public OracleDatabaseModel(final Datasource datasource) {
+		this.datasource = datasource;
 	}
 
 	@Override
-	public List<String> getTypeList() throws SQLException {
+	public List<String> getObjectTypeList() throws SQLException {
 		List<String> types = new ArrayList<String>();
 		types.add("TABLE");
 		types.add("VIEW");
 		types.add("SYNONYM");
+		types.add("TABLE|VIEW|SYNONYM");
 		types.add("INDEX");
 		types.add("CLUSTER");
 		types.add("SEQUENCE");
@@ -44,9 +47,11 @@ public final class OracleDatabaseModel extends AbstractDatabaseModel {
 
 		String sql = "SELECT username AS name FROM all_users order by name";
 
+		Connection connection = null;
 		PreparedStatement stat = null;
 		ResultSet rs = null;
 		try {
+			connection = datasource.getConnection();
 			stat = connection.prepareStatement(sql);
 			rs = stat.executeQuery();
 			while (rs.next()) {
@@ -57,13 +62,11 @@ public final class OracleDatabaseModel extends AbstractDatabaseModel {
 		} finally {
 			release(rs);
 			release(stat);
+			datasource.returnConnection(connection);
 		}
 
 		return users;
 	}
 
-	public PreparedStatement prepareStatement(final String sql) throws SQLException {
-		return connection.prepareStatement(sql);
-	}
 
 }
