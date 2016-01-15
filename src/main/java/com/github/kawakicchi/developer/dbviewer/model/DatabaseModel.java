@@ -8,5 +8,6 @@ public interface DatabaseModel {
 	public List<String> getObjectTypeList() throws SQLException;
 
 	public List<UserEntity> getUserList() throws SQLException;
-	
+
+	public List<ObjectEntity> getObjectList(final String user, final String type) throws SQLException;
 }

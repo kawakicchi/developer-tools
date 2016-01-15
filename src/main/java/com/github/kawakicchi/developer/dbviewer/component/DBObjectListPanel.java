@@ -11,7 +11,7 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
-public class DBObjectTable extends JPanel {
+public class DBObjectListPanel extends JPanel {
 
 	/** serialVersionUID */
 	private static final long serialVersionUID = -2643208807003353857L;
@@ -20,7 +20,7 @@ public class DBObjectTable extends JPanel {
 	private JTable table;
 	private DefaultTableModel model;
 
-	public DBObjectTable() {
+	public DBObjectListPanel() {
 		setLayout(null);
 
 		model = new DefaultTableModel();

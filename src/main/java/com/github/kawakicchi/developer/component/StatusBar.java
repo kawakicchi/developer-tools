@@ -71,18 +71,18 @@ public class StatusBar extends JPanel {
 		//System.out.println(String.format("%d", totalWidth));
 
 		int y = 2;
-		int x = 2;
+		int x = 4;
 		for (int i = 0; i < getComponentCount(); i++) {
 			Component component = getComponent(i);
 
 			int cWidth = 0;
 			if (stretchComponent == component) {
-				cWidth = width - (totalWidth + 4);
+				cWidth = width - (totalWidth + 8);
 			} else {
 				cWidth = component.getWidth();
 			}
 
-			component.setBounds(x, y, cWidth, height - 4);
+			component.setBounds(x, y, cWidth, height - 8);
 			x += cWidth;
 		}
 	}

@@ -24,18 +24,20 @@ import javax.swing.JTabbedPane;
 
 import com.github.kawakicchi.developer.component.BasicFrame;
 import com.github.kawakicchi.developer.component.LabelStatusItem;
+import com.github.kawakicchi.developer.component.LoggerConsole;
 import com.github.kawakicchi.developer.component.ResultSetTable;
 import com.github.kawakicchi.developer.component.ResultSetTable.DataColumn;
 import com.github.kawakicchi.developer.component.StatusBar;
-import com.github.kawakicchi.developer.component.editor.BasicTextPane;
 import com.github.kawakicchi.developer.component.editor.TextLineNumberView;
 import com.github.kawakicchi.developer.component.editor.SQLTextPane;
 import com.github.kawakicchi.developer.database.DatabaseManager;
-import com.github.kawakicchi.developer.dbviewer.component.DBObjectPanel;
-import com.github.kawakicchi.developer.dbviewer.component.DBObjectTable;
+import com.github.kawakicchi.developer.dbviewer.component.DBObjectTypePanel;
+import com.github.kawakicchi.developer.dbviewer.component.DBObjectListPanel;
+import com.github.kawakicchi.developer.dbviewer.model.DatabaseModel;
 import com.github.kawakicchi.developer.dbviewer.model.OracleDatabaseModel;
 import com.github.kawakicchi.developer.explain.task.ExplainTask;
 import com.github.kawakicchi.developer.explain.task.QueryTask;
+import com.github.kawakicchi.developer.logger.Logger;
 import com.github.kawakicchi.developer.task.Task;
 import com.github.kawakicchi.developer.task.TaskAdapter;
 import com.github.kawakicchi.developer.task.TaskManager;
@@ -68,16 +70,18 @@ public class ExplainFrame extends BasicFrame {
 	private JTabbedPane tabSub;
 
 	private JSplitPane pnlSplitSubRight;
-	private DBObjectPanel pnlDBObject;
-	private DBObjectTable tblDBObject;
+	private DBObjectTypePanel pnlDBObjectType;
+	private DBObjectListPanel tblDBObjectList;
 	
 	private ResultSetTable tblResult;
-	private BasicTextPane txtConsole;
+	private LoggerConsole txtConsole;
 
 	private LabelStatusItem lblStatus;
 	private JProgressBar prgStatus;
 
 	private Thread endThread;
+
+	private Logger logger;
 
 	public ExplainFrame() {
 		setTitle(LabelManager.get("Title"));
@@ -86,6 +90,9 @@ public class ExplainFrame extends BasicFrame {
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowOpened(WindowEvent e) {
+				String sql = FileUtility.read(new File("tmp.sql"), "Windows-31J");
+				txtSQL.setText(sql);
+				
 				TaskManager.getInstance().addTaskManagerListener(new TaskManagerListener() {
 					@Override
 					public void taskManagerTaskStart(final Task task) {
@@ -98,6 +105,12 @@ public class ExplainFrame extends BasicFrame {
 				});
 				
 				TaskManager.getInstance().start();
+				
+				logger.debug("DEBUG");
+				logger.info("INFO");
+				logger.warn("WARN");
+				logger.error("ERROR");
+				logger.fatal("FATAL");
 			}
 			@Override
 			public void windowClosing(WindowEvent e) {
@@ -125,6 +138,7 @@ public class ExplainFrame extends BasicFrame {
 			}
 			@Override
 			public void windowClosed(WindowEvent e) {
+				FileUtility.write(new File("tmp.sql"), txtSQL.getText(), "Windows-31J");
 			}
 		});
 	}
@@ -176,7 +190,7 @@ public class ExplainFrame extends BasicFrame {
 			@Override
 			public void taskSuccess(final Task task) {
 				tabSub.setSelectedComponent(pnlScrollConsole);
-				txtConsole.setText(  ((ExplainTask)task).getResult().getLog() );
+				logger.info( ((ExplainTask)task).getResult().getLog() );
 			}
 			@Override
 			public void taskError(final Task task) {
@@ -210,11 +224,6 @@ public class ExplainFrame extends BasicFrame {
 		}
 		return data;
 	}
-	
-	private void doLoad() {
-		String sql = FileUtility.read(new File("sample.sql"), "Windows-31J");
-		txtSQL.setText(sql);
-	}
 
 	protected void doInit() {
 		pnlSplitMain = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -227,16 +236,19 @@ public class ExplainFrame extends BasicFrame {
 		pnlSplitSubRight.setContinuousLayout(true);
 
 		txtSQL = new SQLTextPane();
-		txtConsole = new BasicTextPane();
+		txtConsole = new LoggerConsole();
+		logger = txtConsole;
 		
 		tabSub = new JTabbedPane();
 
 		pnlScrollSQL = new JScrollPane(txtSQL);
 		pnlScrollConsole = new JScrollPane(txtConsole);
 		
-		pnlDBObject = new DBObjectPanel();
-		pnlDBObject.setDatabaseModel(new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME")));
-		tblDBObject = new DBObjectTable();
+		pnlDBObjectType = new DBObjectTypePanel();
+		pnlDBObjectType.setDatabaseModel(new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME")));
+		pnlDBObjectType.setUser(DatabaseManager.getDatasource("DBNAME").getDatabase().getUser());
+
+		tblDBObjectList = new DBObjectListPanel();
 		
 		tblResult = new ResultSetTable();
 
@@ -246,8 +258,8 @@ public class ExplainFrame extends BasicFrame {
 		tabSub.add(LabelManager.get("Tab.Title.DataGrid"), tblResult);
 		// pnlScrollExplain
 
-		pnlSplitSubRight.setTopComponent(pnlDBObject);
-		pnlSplitSubRight.setBottomComponent(tblDBObject);
+		pnlSplitSubRight.setTopComponent(pnlDBObjectType);
+		pnlSplitSubRight.setBottomComponent(tblDBObjectList);
 		pnlSplitSubRight.setDividerLocation(120);
 		
 		pnlSplitSubLeft.setTopComponent(pnlScrollSQL);
@@ -268,8 +280,20 @@ public class ExplainFrame extends BasicFrame {
 				}
 			}
 		});
+		pnlDBObjectType.addDBObjectTypeListener(new DBObjectTypePanel.DBObjectTypeListener() {
+			@Override
+			public void dbObjectTypeChanged(final DBObjectTypePanel panel) {
+				String user = panel.getUser();
+				String type = panel.getType();
 
-		doLoad();
+				try {
+				DatabaseModel model = new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME"));
+				model.getObjectList(user, type);
+				} catch (SQLException ex) {
+					ex.printStackTrace();
+				}
+			}
+		});
 	}
 
 	protected void doInitMenuBar(final JMenuBar menuBar) {

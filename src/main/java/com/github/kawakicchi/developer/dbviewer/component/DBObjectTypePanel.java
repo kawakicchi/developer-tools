@@ -6,6 +6,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JComboBox;
@@ -16,7 +17,7 @@ import javax.swing.JTextField;
 import com.github.kawakicchi.developer.dbviewer.model.DatabaseModel;
 import com.github.kawakicchi.developer.dbviewer.model.UserEntity;
 
-public class DBObjectPanel extends JPanel {
+public class DBObjectTypePanel extends JPanel {
 
 	/** serialVersionUID */
 	private static final long serialVersionUID = -1545074734344651645L;
@@ -26,6 +27,8 @@ public class DBObjectPanel extends JPanel {
 	private static final int COMPONENT_MARGIN = 6;
 	private static final int COMPOENNT_INTERVAL = 2;
 
+	private List<DBObjectTypeListener> listeners;
+
 	private JLabel lblUser;
 	private JComboBox<String> cmbUser;
 	private JLabel lblType;
@@ -33,7 +36,10 @@ public class DBObjectPanel extends JPanel {
 	private JLabel lblFilt;
 	private JTextField txtFilt;
 
-	public DBObjectPanel() {
+	public DBObjectTypePanel() {
+
+		listeners = new ArrayList<DBObjectTypeListener>();
+
 		setLayout(null);
 
 		int x = COMPONENT_MARGIN;
@@ -64,11 +70,19 @@ public class DBObjectPanel extends JPanel {
 		txtFilt.setLocation(x + COMPONENT_LABEL_WIDTH, y);
 		add(txtFilt);
 		
+		cmbUser.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(final ItemEvent e) {
+				if (e.getStateChange() == ItemEvent.SELECTED){
+					callDBObjectTypeChenged();
+				}
+			}
+		});
 		cmbType.addItemListener(new ItemListener() {
 			@Override
-			public void itemStateChanged(ItemEvent e) {
+			public void itemStateChanged(final ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.SELECTED){
-					System.out.println( cmbType.getSelectedItem() );
+					callDBObjectTypeChenged();
 				}
 			}
 		});
@@ -93,6 +107,12 @@ public class DBObjectPanel extends JPanel {
 			}
 		});
 	}
+	
+	public final void addDBObjectTypeListener(final DBObjectTypeListener listener) {
+		synchronized (listeners) {
+			listeners.add(listener);
+		}
+	}
 
 	public void setDatabaseModel(final DatabaseModel model) {
 		try {
@@ -112,4 +132,34 @@ public class DBObjectPanel extends JPanel {
 		}
 	}
 
+	public void setUser(final String user) {
+		cmbUser.setSelectedItem(user);
+		/*
+		for (int i = 0 ; i < cmbUser.getItemCount() ; i++) {
+			if (cmbUser.getItemAt(i).equals(user)) {
+				cmbUser.setSelectedIndex(i);
+				return;
+			}
+		}
+		*/
+	}
+
+	public String getUser() {
+		return cmbUser.getSelectedItem().toString();
+	}
+	public String getType() {
+		return cmbType.getSelectedItem().toString();
+	}
+	
+	private void callDBObjectTypeChenged() {
+		synchronized (listeners) {
+			for (DBObjectTypeListener listener : listeners) {
+				listener.dbObjectTypeChanged(this);
+			}
+		}
+	}
+
+	public static interface DBObjectTypeListener {
+		public void dbObjectTypeChanged(final DBObjectTypePanel panel);
+	}
 }
