@@ -24,7 +24,8 @@ public class SQLTextPane extends BasicTextPane {
 	private static final long serialVersionUID = 7284998526769136420L;
 
 	private static final Pattern PTN_KEYWORD = Pattern.compile(
-			"(SELECT|END|GROUP|UNION|ALL|AS|MAX|LIKE|MINUS|SUM|CASE|WHEN|THEN|ELSE|NULL|IS|NOT|SYSDATE|FROM|WHERE|AND|OR|ORDER|BY)", Pattern.CASE_INSENSITIVE);
+			"((^)|([,\\(\\s\\t\\r\\n]+))(SELECT|END|GROUP|UNION|ALL|AS|MAX|LIKE|MINUS|SUM|CASE|WHEN|THEN|ELSE|NULL|IS|NOT|SYSDATE|FROM|WHERE|AND|OR|ORDER|BY)(($)|([,\\)\\s\\t\\r\\n]+))", Pattern.CASE_INSENSITIVE);
+
 	private static final Pattern PTN_COMMENT = Pattern.compile("(--[^\\r\\n]*)", Pattern.CASE_INSENSITIVE);
 	private static final Pattern PTN_STRING = Pattern.compile("('[^']*')", Pattern.CASE_INSENSITIVE);
 	private static final Pattern PTN_SYMBOL = Pattern.compile("(,|=|<|>|/|\\.|\\*|\\+|\\(|\\)|\\|)", Pattern.CASE_INSENSITIVE);
@@ -113,7 +114,7 @@ public class SQLTextPane extends BasicTextPane {
 			Matcher m = null;
 			m = PTN_KEYWORD.matcher(text);
 			while (m.find()) {
-				getStyledDocument().setCharacterAttributes(m.start(), m.end() - m.start(), atrKeyword, true);
+				getStyledDocument().setCharacterAttributes(m.start(4), m.end(4) - m.start(4), atrKeyword, true);
 			}
 
 			m = PTN_SYMBOL.matcher(text);

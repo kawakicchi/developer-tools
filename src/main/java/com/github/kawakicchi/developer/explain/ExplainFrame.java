@@ -287,8 +287,8 @@ public class ExplainFrame extends BasicFrame {
 				String type = panel.getType();
 
 				try {
-				DatabaseModel model = new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME"));
-				model.getObjectList(user, type);
+					DatabaseModel model = new OracleDatabaseModel(DatabaseManager.getDatasource("DBNAME"));
+					model.getObjectList(user, type);
 				} catch (SQLException ex) {
 					ex.printStackTrace();
 				}

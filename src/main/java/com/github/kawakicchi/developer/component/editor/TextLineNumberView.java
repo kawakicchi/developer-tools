@@ -34,9 +34,13 @@ public class TextLineNumberView extends JComponent {
 	private final int fontHeight;
 	private final int fontDescent;
 	private final int fontLeading;
+	
+	private final Insets insets;
 
 	public TextLineNumberView(JTextPane textArea) {
 		this.textArea = textArea;
+		insets = textArea.getInsets();
+		
 		Font font = textArea.getFont();
 		fontMetrics = getFontMetrics(font);
 		fontHeight = fontMetrics.getHeight();
@@ -107,7 +111,7 @@ public class TextLineNumberView extends JComponent {
 		int base = clip.y;
 		int start = getLineAtPoint(base);
 		int end = getLineAtPoint(base + clip.height);
-		int y = start * fontHeight;
+		int y = start * fontHeight + insets.top;
 		int rmg = getBorder().getBorderInsets(this).right;
 		for (int i = start; i <= end; i++) {
 			String text = String.valueOf(i + 1);
