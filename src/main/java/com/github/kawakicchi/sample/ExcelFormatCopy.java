@@ -1,4 +1,4 @@
-package com.github.kawakicchi.developer.sample;
+package com.github.kawakicchi.sample;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -58,7 +58,7 @@ public class ExcelFormatCopy {
 			
 			//String s = (String) clip.getData(DataFlavor.stringFlavor);
 			String s = (String) clip.getData(new DataFlavor("text/html; class=java.lang.String; charset=Unicode","text/html"));
-//			System.out.println(s);
+			System.out.println(s);
 //		} catch (ClassNotFoundException ex) {
 //			ex.printStackTrace();
 		} catch (UnsupportedFlavorException ex) {
