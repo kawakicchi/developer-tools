@@ -105,12 +105,6 @@ public class ExplainFrame extends BasicFrame {
 				});
 				
 				TaskManager.getInstance().start();
-				
-				logger.debug("DEBUG");
-				logger.info("INFO");
-				logger.warn("WARN");
-				logger.error("ERROR");
-				logger.fatal("FATAL");
 			}
 			@Override
 			public void windowClosing(WindowEvent e) {
@@ -273,9 +267,17 @@ public class ExplainFrame extends BasicFrame {
 			public void keyPressed(final KeyEvent e) {
 				if (e.getModifiers() == KeyEvent.CTRL_MASK) {
 					if (e.getKeyCode() == KeyEvent.VK_R) {
-						doQuery(txtSQL.getText());
+						String sql = txtSQL.getSelectedText();
+						if (null == sql || 0 == sql.length()) {
+							sql = txtSQL.getText();
+						}
+						doQuery(sql);
 					}else if (e.getKeyCode() == KeyEvent.VK_P) {
-						doExplain(txtSQL.getText());
+						String sql = txtSQL.getSelectedText();
+						if (null == sql || 0 == sql.length()) {
+							sql = txtSQL.getText();
+						}
+						doExplain(sql);
 					}
 				}
 			}

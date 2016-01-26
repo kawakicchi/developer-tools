@@ -1,4 +1,4 @@
-package com.github.kawakicchi.developer.tools.diff;
+package com.github.kawakicchi.developer.diff;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -247,33 +247,6 @@ public class DiffFile {
 		}
 
 		return diff;
-	}
-
-	private String read(final File aFile, final Charset aCharset) {
-		StringBuilder sb = new StringBuilder();
-
-		InputStreamReader reader = null;
-		try {
-			reader = new InputStreamReader(new FileInputStream(aFile), aCharset);
-
-			char[] buffer = new char[1024];
-			int size = -1;
-			while (-1 != (size = reader.read(buffer, 0, 1024))) {
-				sb.append(buffer, 0, size);
-			}
-
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		} finally {
-			if (null != reader) {
-				try {
-					reader.close();
-				} catch (IOException ex) {
-					ex.printStackTrace();
-				}
-			}
-		}
-		return sb.toString();
 	}
 
 	private void file(final File aFile, final List<File> aFiles) {
